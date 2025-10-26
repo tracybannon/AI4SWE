@@ -1,0 +1,96 @@
+// Prisma schema for AI Adoption Survey Application
+// Defines the database structure for users, surveys, questions, and responses
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/**
+ * User model - Stores user account information
+ * Each user can have multiple survey evaluations
+ */
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  evaluations   Evaluation[]
+
+  @@map("users")
+}
+
+/**
+ * Question model - Configurable survey questions
+ * Questions can be updated over time without affecting existing responses
+ */
+model Question {
+  id            String    @id @default(cuid())
+  order         Int       // Display order in the survey
+  text          String    // The question text
+  type          String    // Question type: text, textarea, select, multiselect, radio
+  required      Boolean   @default(true)
+  active        Boolean   @default(true) // Allows disabling questions without deleting
+  category      String?   // Optional category grouping
+  options       String?   // JSON array of options for select/radio questions
+  placeholder   String?   // Placeholder text for input fields
+  helpText      String?   // Additional help text for the question
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  responses     Response[]
+
+  @@map("questions")
+}
+
+/**
+ * Evaluation model - Represents a before/after evaluation session
+ * Each evaluation belongs to a user and can be taken at different phases
+ */
+model Evaluation {
+  id            String    @id @default(cuid())
+  userId        String
+  name          String    // User-defined name for this evaluation
+  description   String?   // Optional description
+  phase         String    // "before" or "after"
+  status        String    @default("in_progress") // in_progress, completed
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  completedAt   DateTime?
+
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  responses     Response[]
+
+  @@map("evaluations")
+}
+
+/**
+ * Response model - Stores individual question responses
+ * Links evaluations to questions with the user's answer
+ */
+model Response {
+  id            String    @id @default(cuid())
+  evaluationId  String
+  questionId    String
+  answer        String    // The user's response (can be JSON for multi-select)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  evaluation    Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  question      Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  // Ensure one response per question per evaluation
+  @@unique([evaluationId, questionId])
+  @@map("responses")
+}
