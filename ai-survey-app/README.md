@@ -13,6 +13,26 @@ A secure, enterprise-grade web application for assessing and tracking AI tool ad
 - **Comprehensive Logging**: Structured logging with Winston for debugging and monitoring
 - **Centralized Error Handling**: Consistent error handling across the entire application
 - **Responsive Design**: Modern UI built with Tailwind CSS that works on all devices
+- **Automated Testing**: 77+ tests with Jest and React Testing Library
+- **CI/CD Ready**: GitHub Actions workflow for continuous integration
+
+## 🚀 Quick Deploy
+
+**Deploy to Netlify in 10 minutes:**
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start)
+
+**Quick deployment options:**
+- **[🎯 Quick Start (10 min)](./DEPLOY_QUICK_START.md)** - Visual checklist
+- **[📘 Netlify Guide (Complete)](./NETLIFY_DEPLOY.md)** - Step-by-step with UI/CLI/script
+- **[🐳 All Platforms](./DEPLOYMENT.md)** - Netlify, Vercel, Docker, VPS
+
+**One-command deploy:**
+```bash
+cd ai-survey-app
+./setup-env.sh    # Configure environment
+./deploy-netlify.sh  # Deploy to Netlify
+```
 
 ## 🏗️ Architecture & Technology Stack
 
