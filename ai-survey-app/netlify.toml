@@ -1,0 +1,63 @@
+# Netlify Configuration for AI Adoption Survey Application
+#
+# This configuration enables deployment of the Next.js application to Netlify
+# with proper build settings and environment handling
+
+[build]
+  # Build command - generates Prisma client and builds Next.js
+  command = "npm run build"
+
+  # Output directory for Next.js static and serverless files
+  publish = ".next"
+
+  # Functions directory for Next.js serverless functions
+  functions = ".netlify/functions"
+
+[build.environment]
+  # Node.js version
+  NODE_VERSION = "18.17.0"
+
+  # Disable Next.js telemetry in CI
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Production context (main branch)
+[context.production]
+  command = "npm run build"
+
+  [context.production.environment]
+    NODE_ENV = "production"
+
+# Development context (other branches)
+[context.deploy-preview]
+  command = "npm run build"
+
+# Local development with Netlify CLI
+[context.dev]
+  command = "npm run dev"
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Redirect rules
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Plugin configuration for Next.js
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Environment variables to set in Netlify UI:
+# - DATABASE_URL: PostgreSQL connection string (use Neon, Supabase, or Railway)
+# - NEXTAUTH_SECRET: Generated secret (use: openssl rand -base64 32)
+# - NEXTAUTH_URL: Your Netlify site URL (e.g., https://your-app.netlify.app)
+# - NODE_ENV: production
+# - LOG_LEVEL: info or warn
