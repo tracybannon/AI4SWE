@@ -1,22 +1,14 @@
 import type { Config } from 'jest';
-import nextJest from 'next/jest';
 
 /**
  * Jest configuration for Next.js application
  *
  * Configures testing environment with:
- * - Next.js optimizations
- * - TypeScript support
+ * - TypeScript support via ts-jest
  * - Module path mapping
  * - Coverage reporting
  */
 
-const createJestConfig = nextJest({
-  // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
-  dir: './',
-});
-
-// Add any custom config to be passed to Jest
 const config: Config = {
   // Test environment
   testEnvironment: 'jest-environment-jsdom',
@@ -27,6 +19,9 @@ const config: Config = {
   // Module paths
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // Mock CSS and image imports
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/__mocks__/fileMock.js',
   },
 
   // Coverage configuration
@@ -35,7 +30,12 @@ const config: Config = {
     '!src/**/*.d.ts',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
     '!src/**/__tests__/**',
+    '!src/app/layout.tsx',
+    '!src/middleware.ts',
   ],
+
+  // Coverage output directory
+  coverageDirectory: 'coverage',
 
   // Test match patterns
   testMatch: [
@@ -43,11 +43,14 @@ const config: Config = {
     '**/?(*.)+(spec|test).[jt]s?(x)',
   ],
 
-  // Transform files
+  // Transform files with ts-jest
+  preset: 'ts-jest',
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: {
-        jsx: 'react',
+        jsx: 'react-jsx',
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
       },
     }],
   },
@@ -59,6 +62,12 @@ const config: Config = {
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
     '<rootDir>/.next/',
+    '<rootDir>/out/',
+  ],
+
+  // Transform ignore patterns - transform ESM modules
+  transformIgnorePatterns: [
+    '/node_modules/(?!(next-auth|jose|@panva|preact-render-to-string|preact|oauth4webapi)/)',
   ],
 
   // Coverage thresholds (optional - uncomment to enforce)
@@ -72,5 +81,4 @@ const config: Config = {
   // },
 };
 
-// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
-export default createJestConfig(config);
+export default config;
