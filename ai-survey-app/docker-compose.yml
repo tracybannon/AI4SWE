@@ -1,0 +1,50 @@
+# Docker Compose configuration for AI Adoption Survey Application
+# Includes application and PostgreSQL database
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: ai-survey-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ai_survey
+      POSTGRES_USER: ai_survey_user
+      POSTGRES_PASSWORD: change_this_password_in_production
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai_survey_user -d ai_survey"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-survey-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://ai_survey_user:change_this_password_in_production@db:5432/ai_survey
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=change_this_secret_in_production
+      - LOG_LEVEL=info
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./logs:/app/logs
+    command: sh -c "npx prisma migrate deploy && node server.js"
+
+volumes:
+  postgres_data:
+    driver: local
