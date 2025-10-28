@@ -1,2 +1,2 @@
 # AI4SWE
-Systematic Literature Review for the ArchAITecture Research Program
+This repository houses exploration appications related to the AI4SWE and ArchAITecture Research.  
