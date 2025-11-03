@@ -4,8 +4,8 @@
 # with proper build settings and environment handling
 
 [build]
-  # Build command - generates Prisma client and builds Next.js
-  command = "npm run build"
+  # Build command - install with legacy peer deps, generate Prisma client, and build Next.js
+  command = "npm install --legacy-peer-deps && npm run build"
 
   # Output directory for Next.js static and serverless files
   publish = ".next"
@@ -20,16 +20,19 @@
   # Disable Next.js telemetry in CI
   NEXT_TELEMETRY_DISABLED = "1"
 
+  # Use legacy peer deps to handle Next.js 16 + React 19 compatibility issues
+  NPM_FLAGS = "--legacy-peer-deps"
+
 # Production context (main branch)
 [context.production]
-  command = "npm run build"
+  command = "npm install --legacy-peer-deps && npm run build"
 
   [context.production.environment]
     NODE_ENV = "production"
 
 # Development context (other branches)
 [context.deploy-preview]
-  command = "npm run build"
+  command = "npm install --legacy-peer-deps && npm run build"
 
 # Local development with Netlify CLI
 [context.dev]
