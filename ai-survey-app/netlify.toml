@@ -14,8 +14,8 @@
   functions = ".netlify/functions"
 
 [build.environment]
-  # Node.js version
-  NODE_VERSION = "18.17.0"
+  # Node.js version - upgraded to 20.x for Next.js 16 and Prisma 6.18 compatibility
+  NODE_VERSION = "20.11.0"
 
   # Disable Next.js telemetry in CI
   NEXT_TELEMETRY_DISABLED = "1"
