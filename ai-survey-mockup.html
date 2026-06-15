@@ -236,6 +236,87 @@
             padding-left: 20px;
         }
 
+        .comparison-container {
+            display: none;
+        }
+
+        .comparison-table {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 2fr 3fr 3fr;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .comparison-row:last-child {
+            border-bottom: none;
+        }
+
+        .comparison-question {
+            font-weight: 600;
+            color: #2d3748;
+            padding-right: 15px;
+        }
+
+        .comparison-answer {
+            padding: 12px;
+            border-radius: 8px;
+            background: #f7fafc;
+        }
+
+        .comparison-answer.before {
+            border-left: 4px solid #4299e1;
+        }
+
+        .comparison-answer.after {
+            border-left: 4px solid #48bb78;
+        }
+
+        .comparison-label {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .comparison-label.before {
+            color: #2c5282;
+        }
+
+        .comparison-label.after {
+            color: #22543d;
+        }
+
+        .comparison-value {
+            color: #4a5568;
+        }
+
+        .status-message {
+            background: #bee3f8;
+            border-left: 4px solid #4299e1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .status-message.success {
+            background: #c6f6d5;
+            border-left-color: #48bb78;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
         .badge {
             display: inline-block;
             padding: 4px 12px;
@@ -360,10 +441,26 @@
             <h2>🎉 Survey Complete!</h2>
             <p class="subtitle">Here are your responses</p>
 
+            <div id="statusMessage"></div>
             <div id="resultsContainer"></div>
 
+            <div class="action-buttons">
+                <button class="btn-primary" id="nextPhaseButton" onclick="startNextPhase()" style="display:none;">Take After Survey</button>
+                <button class="btn-primary" id="viewComparisonButton" onclick="showComparison()" style="display:none;">View Before/After Comparison</button>
+                <button class="btn-secondary" onclick="resetSurvey()">Start Over</button>
+            </div>
+        </div>
+
+        <!-- Comparison Screen -->
+        <div id="comparisonScreen" class="card comparison-container">
+            <h2>📊 Before vs After Comparison</h2>
+            <p class="subtitle">See how your responses changed</p>
+
+            <div id="comparisonContainer" class="comparison-table"></div>
+
             <div class="buttons">
-                <button class="btn-primary" onclick="resetSurvey()">Start New Survey</button>
+                <button class="btn-secondary" onclick="showResults()">Back to Results</button>
+                <button class="btn-primary" onclick="resetSurvey()">Start New Evaluation</button>
             </div>
         </div>
     </div>
@@ -439,16 +536,46 @@
         let currentQuestion = 0;
         let responses = {};
 
+        // Load saved evaluations from localStorage
+        function loadEvaluations() {
+            const saved = localStorage.getItem('aiSurveyEvaluations');
+            return saved ? JSON.parse(saved) : { before: null, after: null };
+        }
+
+        // Save evaluation to localStorage
+        function saveEvaluation(phase, responses) {
+            const evaluations = loadEvaluations();
+            evaluations[phase] = {
+                responses: responses,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem('aiSurveyEvaluations', JSON.stringify(evaluations));
+        }
+
         function showWelcome() {
             document.getElementById('welcomeScreen').classList.remove('hidden');
             document.getElementById('phaseScreen').classList.add('hidden');
             document.getElementById('surveyScreen').classList.add('hidden');
             document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('comparisonScreen').classList.add('hidden');
         }
 
         function showPhaseSelection() {
             document.getElementById('welcomeScreen').classList.add('hidden');
             document.getElementById('phaseScreen').classList.remove('hidden');
+
+            // Update phase buttons to show completion status
+            const evaluations = loadEvaluations();
+            const phaseButtons = document.querySelectorAll('.phase-button');
+
+            phaseButtons.forEach(button => {
+                const phase = button.getAttribute('onclick').includes('before') ? 'before' : 'after';
+                if (evaluations[phase]) {
+                    button.classList.add('selected');
+                    const desc = button.querySelector('.phase-desc');
+                    desc.textContent = '✅ Completed - Click to retake';
+                }
+            });
         }
 
         function selectPhase(phase) {
@@ -543,13 +670,45 @@
         }
 
         function showResults() {
+            // Save current evaluation
+            saveEvaluation(currentPhase, responses);
+
             document.getElementById('surveyScreen').classList.add('hidden');
+            document.getElementById('comparisonScreen').classList.add('hidden');
             document.getElementById('resultsScreen').classList.remove('hidden');
 
             const badgeClass = currentPhase === 'before' ? 'badge-before' : 'badge-after';
             const badgeText = currentPhase === 'before' ? '📊 Before Implementation' : '🎯 After Implementation';
             document.getElementById('resultsPhaseBadge').className = `badge ${badgeClass}`;
             document.getElementById('resultsPhaseBadge').textContent = badgeText;
+
+            // Show status message and buttons based on what's completed
+            const evaluations = loadEvaluations();
+            const statusContainer = document.getElementById('statusMessage');
+            const nextPhaseBtn = document.getElementById('nextPhaseButton');
+            const comparisonBtn = document.getElementById('viewComparisonButton');
+
+            if (currentPhase === 'before' && !evaluations.after) {
+                statusContainer.innerHTML = `
+                    <div class="status-message success">
+                        ✅ Before evaluation saved! Ready to take the After survey when you've implemented AI tools.
+                    </div>
+                `;
+                nextPhaseBtn.style.display = 'inline-block';
+                comparisonBtn.style.display = 'none';
+            } else if (evaluations.before && evaluations.after) {
+                statusContainer.innerHTML = `
+                    <div class="status-message success">
+                        ✅ Both evaluations complete! Click below to see your Before/After comparison.
+                    </div>
+                `;
+                nextPhaseBtn.style.display = 'none';
+                comparisonBtn.style.display = 'inline-block';
+            } else {
+                statusContainer.innerHTML = '';
+                nextPhaseBtn.style.display = 'none';
+                comparisonBtn.style.display = 'none';
+            }
 
             const container = document.getElementById('resultsContainer');
             let html = '';
@@ -575,15 +734,101 @@
             container.innerHTML = html;
         }
 
-        function resetSurvey() {
-            currentPhase = '';
+        function startNextPhase() {
+            currentPhase = 'after';
             currentQuestion = 0;
             responses = {};
-            showWelcome();
+
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('surveyScreen').classList.remove('hidden');
+
+            const badgeClass = 'badge-after';
+            const badgeText = '🎯 After Implementation';
+            document.getElementById('phaseBadge').className = `badge ${badgeClass}`;
+            document.getElementById('phaseBadge').textContent = badgeText;
+
+            renderQuestion();
         }
 
-        // Initialize
-        showWelcome();
+        function showComparison() {
+            const evaluations = loadEvaluations();
+
+            if (!evaluations.before || !evaluations.after) {
+                alert('Please complete both Before and After evaluations first.');
+                return;
+            }
+
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('comparisonScreen').classList.remove('hidden');
+
+            const container = document.getElementById('comparisonContainer');
+            let html = '';
+
+            questions.forEach(question => {
+                const beforeAnswer = evaluations.before.responses[question.id];
+                const afterAnswer = evaluations.after.responses[question.id];
+
+                let beforeDisplay = beforeAnswer;
+                let afterDisplay = afterAnswer;
+
+                if (Array.isArray(beforeAnswer)) {
+                    beforeDisplay = beforeAnswer.join(', ');
+                } else if (!beforeAnswer || beforeAnswer === 'Select an option...') {
+                    beforeDisplay = '<em>Not answered</em>';
+                }
+
+                if (Array.isArray(afterAnswer)) {
+                    afterDisplay = afterAnswer.join(', ');
+                } else if (!afterAnswer || afterAnswer === 'Select an option...') {
+                    afterDisplay = '<em>Not answered</em>';
+                }
+
+                html += `
+                    <div class="comparison-row">
+                        <div class="comparison-question">${question.text}</div>
+                        <div class="comparison-answer before">
+                            <div class="comparison-label before">📊 Before</div>
+                            <div class="comparison-value">${beforeDisplay}</div>
+                        </div>
+                        <div class="comparison-answer after">
+                            <div class="comparison-label after">🎯 After</div>
+                            <div class="comparison-value">${afterDisplay}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function resetSurvey() {
+            if (confirm('This will clear all saved evaluations. Are you sure?')) {
+                localStorage.removeItem('aiSurveyEvaluations');
+                currentPhase = '';
+                currentQuestion = 0;
+                responses = {};
+                showWelcome();
+            }
+        }
+
+        // Initialize - check if we have saved evaluations
+        function init() {
+            const evaluations = loadEvaluations();
+
+            // If both evaluations exist, offer to show comparison
+            if (evaluations.before && evaluations.after) {
+                if (confirm('You have completed evaluations. Would you like to view the Before/After comparison?')) {
+                    showComparison();
+                } else {
+                    showWelcome();
+                }
+            } else {
+                showWelcome();
+            }
+        }
+
+        // Start the app
+        init();
     </script>
 </body>
 </html>
